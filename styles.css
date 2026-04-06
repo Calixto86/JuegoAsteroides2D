@@ -1,0 +1,24 @@
+body {
+  margin: 0;
+  background: #10012e;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+canvas {
+  border: 2px solid #e316c8;
+  border-radius: 20px;
+  background: #2f0549;
+  display: block;
+}
+
+.hud {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    right: 15px;
+    display: flex;
+    justify-content: space-between;
+}
