@@ -1,52 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-  <meta charset="UTF-8">
-  <title>Plataforma Base</title>
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <title>Juego Asteroides 2D</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-    <canvas id="gameCanvas" width="900" height="600"></canvas>
-
-    <script>
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
-
-    let puntaje = 0;
-    let vidas = 3;
-
-    function dibujarFondo() {
-    ctx.fillStyle = "#020817";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-
-    function dibujarEstrellas() {
-        for (let i = 0; i < 100; i++) {
-            let x = Math.random() * canvas.width;
-            let y = Math.random() * canvas.height;
-
-            ctx.beginPath();
-            ctx.arc(x, y, Math.random() * 2, 0, Math.PI * 2);
-            ctx.fillStyle = "white";
-            ctx.fill();
-        }
-    }
-
-    function dibujarMarco() {
-    ctx.strokeStyle = "#1e3a5f";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(0, 0, canvas.width, canvas.height);
-    }
-
-    function render() {
-    dibujarFondo();
-    dibujarEstrellas();
-    dibujarMarco();
-    }
-
-    render();
-    </script>
+    <canvas width="900" height="600"></canvas>
+    <script src="game.js"></script>
 
 </body>
+
 </html>

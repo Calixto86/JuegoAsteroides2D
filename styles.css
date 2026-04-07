@@ -1,6 +1,18 @@
+:root {
+    --color-fondo: #10012e;
+    --color-canvas: #2f0549;
+    --color-borde: #e316c8; 
+    --color-texto: #ffffff;
+}
+
+* {
+  margin: 0px;
+  padding: 0px;
+}
+
 body {
   margin: 0;
-  background: #10012e;
+  background: var(--color-fondo);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -8,7 +20,7 @@ body {
 }
 
 canvas {
-  border: 2px solid #e316c8;
+  border: 2px solid var(--color-borde);
   border-radius: 20px;
   background: #2f0549;
   display: block;
