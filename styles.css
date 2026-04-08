@@ -1,7 +1,7 @@
 :root {
-    --color-fondo: #10012e;
-    --color-canvas: #2f0549;
-    --color-borde: #e316c8; 
+    --color-fondo: #130323;
+    --color-canvas: #27053d;
+    --color-borde: #917c8e; 
     --color-texto: #ffffff;
 }
 
@@ -22,7 +22,7 @@ body {
 canvas {
   border: 2px solid var(--color-borde);
   border-radius: 20px;
-  background: #2f0549;
+  background: #12011c;
   display: block;
 }
 
