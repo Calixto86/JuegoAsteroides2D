@@ -1,6 +1,8 @@
 let canvas = document.querySelector('canvas');
 let ctx = canvas.getContext('2d');
 
+
+
 function dibujarMarco() {
     ctx.strokeStyle = "#1e3a5f";
     ctx.lineWidth = 2;
@@ -37,6 +39,10 @@ function Ship(x, y) {
     this.x = x;
     this.y = y;
     this.angle = 0;
+    this.velocityX = 0;
+    this.velocityY = 0;
+
+
 
     this.draw = function () {
         ctx.save();
@@ -47,7 +53,7 @@ function Ship(x, y) {
         ctx.lineTo(-15, 15);
         ctx.lineTo(15, 15);
         ctx.closePath();
-        ctx.strokeStyle = "#FFFFFF";
+        ctx.strokeStyle = "#00ffff";
         ctx.stroke();
         ctx.restore();
     }
@@ -59,6 +65,27 @@ function Ship(x, y) {
         if (keys["ArrowRight"]) {
             this.angle += 0.2;
         }
+        //acelera hacia adelante
+        if (keys["ArrowUp"]) {
+            this.velocityX += Math.cos(this.angle - Math.PI / 2) * 0.1;
+            this.velocityY += Math.sin(this.angle - Math.PI / 2) * 0.1;
+        }
+        //aplicamos moviemiento
+        this.x += this.velocityX;
+        this.y += this.velocityY;
+        this.velocityX *= 0.98;
+        this.velocityY *= 0.98;
+
+        // Controlar que no sobrepase los limites
+        if (this.x > canvas.width)
+            this.x = 0;
+        if (this.x < 0)
+            this.x = canvas.width;
+        if (this.y > canvas.height)
+            this.y = 0;
+        if (this.y < 0)
+            this.y = canvas.height;
+
     }
 }
 
