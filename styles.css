@@ -1,6 +1,6 @@
 :root {
-    --color-fondo: #130323;
-    --color-canvas: #27053d;
+    --color-fondo: #010618;
+    --color-canvas: #000000;
     --color-borde: #917c8e; 
     --color-texto: #ffffff;
 }
@@ -24,13 +24,4 @@ canvas {
   border-radius: 20px;
   background: var(--color-canvas);
   display: block;
-}
-
-.hud {
-    position: absolute;
-    top: 15px;
-    left: 15px;
-    right: 15px;
-    display: flex;
-    justify-content: space-between;
 }
