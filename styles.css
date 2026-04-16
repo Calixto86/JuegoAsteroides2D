@@ -22,7 +22,7 @@ body {
 canvas {
   border: 2px solid var(--color-borde);
   border-radius: 20px;
-  background: #12011c;
+  background: var(--color-canvas);
   display: block;
 }
 
