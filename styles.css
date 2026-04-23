@@ -1,13 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
 :root {
     --color-fondo: #010618;
     --color-canvas: #000000;
     --color-borde: #917c8e; 
     --color-texto: #ffffff;
+    --color-boton: #10162b;
+    --color-boton-hover: #1b2442;
 }
 
 * {
   margin: 0px;
   padding: 0px;
+  box-sizing: border-box;
 }
 
 body {
@@ -16,7 +21,15 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  min-height: 100vh;
+  font-family: 'Press Start 2P', monospace;
+}
+
+.contenedor-juego {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
 }
 
 canvas {
@@ -24,4 +37,29 @@ canvas {
   border-radius: 20px;
   background: var(--color-canvas);
   display: block;
+}
+
+.panel-botones {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+button {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: var(--color-texto);
+  background: var(--color-boton);
+  border: 2px solid var(--color-borde);
+  border-radius: 10px;
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+button:hover {
+  background: var(--color-boton-hover);
+  transform: translateY(-2px);
 }

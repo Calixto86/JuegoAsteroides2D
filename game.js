@@ -1,5 +1,5 @@
-let canvas = document.querySelector('canvas');
-let ctx = canvas.getContext('2d');
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
 const COLORES = {
     nave: "#909fc4",
@@ -7,16 +7,23 @@ const COLORES = {
     bala: "#facc15",
     estrellas: "#ffffff",
     borde: "#1e3a5f",
-    asteroide: "#ffffff"
+    asteroide: "#ffffff",
+    textoHUD: "#ffffff",
+    gameOverFondo: "rgba(0, 0, 0, 0.82)",
+    gameOverTexto: "#ff4d4d",
+    pausaTexto: "#facc15"
 };
 
 class Fondo {
-    constructor() {
+    constructor(cantidad = 100) {
+        this.cantidad = cantidad;
         this.estrellas = [];
     }
-    // Genera estrellas aleatorias para el fondo
+
     crear() {
-        for (let i = 0; i < 100; i++) {
+        this.estrellas = [];
+
+        for (let i = 0; i < this.cantidad; i++) {
             this.estrellas.push({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height,
@@ -27,9 +34,10 @@ class Fondo {
 
     dibujar() {
         ctx.fillStyle = COLORES.estrellas;
-        this.estrellas.forEach(e => {
+
+        this.estrellas.forEach(estrella => {
             ctx.beginPath();
-            ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+            ctx.arc(estrella.x, estrella.y, estrella.r, 0, Math.PI * 2);
             ctx.fill();
         });
     }
@@ -41,11 +49,21 @@ class Bala {
         this.y = y;
         this.velocidadX = Math.cos(angulo - Math.PI / 2) * 25;
         this.velocidadY = Math.sin(angulo - Math.PI / 2) * 25;
+        this.activa = true;
     }
 
     update() {
         this.x += this.velocidadX;
         this.y += this.velocidadY;
+
+        if (
+            this.x > canvas.width ||
+            this.x < 0 ||
+            this.y > canvas.height ||
+            this.y < 0
+        ) {
+            this.activa = false;
+        }
     }
 
     draw() {
@@ -58,15 +76,23 @@ class Bala {
 
 class Asteroide {
     constructor() {
+        this.activo = true;
         this.crear();
     }
+
     crear() {
         const numLados = Math.floor(Math.random() * 7) + 10;
         this.puntos = [];
-        // Genera forma irregular el asteroide
+        this.radioColision = 0;
+
         for (let j = 0; j < numLados; j++) {
             const angulo = (Math.PI * 2 * j) / numLados;
             const distancia = Math.random() * 30 + 20;
+
+            if (distancia > this.radioColision) {
+                this.radioColision = distancia;
+            }
+
             this.puntos.push({
                 x: Math.cos(angulo) * distancia,
                 y: Math.sin(angulo) * distancia
@@ -74,6 +100,7 @@ class Asteroide {
         }
 
         let borde = Math.floor(Math.random() * 4);
+
         if (borde === 0) {
             this.x = Math.random() * canvas.width;
             this.y = 0;
@@ -88,56 +115,70 @@ class Asteroide {
             this.y = Math.random() * canvas.height;
         }
 
-        let centroX = canvas.width / 2;
-        let centroY = canvas.height / 2;
+        const centroX = canvas.width / 2;
+        const centroY = canvas.height / 2;
 
-        let dx = centroX - this.x;
-        let dy = centroY - this.y;
+        const dx = centroX - this.x;
+        const dy = centroY - this.y;
 
-        let anguloCentro = Math.atan2(dy, dx);
-        let anguloFinal = anguloCentro + (Math.random() - 0.5);
-        let velocidad = Math.random() * 1.5 + 0.7;
+        const anguloCentro = Math.atan2(dy, dx);
+        const anguloFinal = anguloCentro + (Math.random() - 0.5);
+        const velocidad = Math.random() * 1.5 + 0.7;
 
         this.velocidadX = Math.cos(anguloFinal) * velocidad;
         this.velocidadY = Math.sin(anguloFinal) * velocidad;
     }
 
     update() {
+        if (!this.activo) return;
+
         this.x += this.velocidadX;
         this.y += this.velocidadY;
-        // Reaparecen por el lado contrario
+
         if (this.x > canvas.width) this.x = 0;
         if (this.x < 0) this.x = canvas.width;
         if (this.y > canvas.height) this.y = 0;
         if (this.y < 0) this.y = canvas.height;
     }
+
     draw() {
+        if (!this.activo) return;
+
         ctx.beginPath();
         ctx.moveTo(this.x + this.puntos[0].x, this.y + this.puntos[0].y);
-        this.puntos.forEach(p => {
-            ctx.lineTo(this.x + p.x, this.y + p.y);
+
+        this.puntos.forEach(punto => {
+            ctx.lineTo(this.x + punto.x, this.y + punto.y);
         });
+
         ctx.closePath();
         ctx.strokeStyle = COLORES.asteroide;
+        ctx.lineWidth = 2;
         ctx.stroke();
     }
 }
 
 class Nave {
     constructor(x, y, juego) {
+        this.juego = juego;
         this.x = x;
         this.y = y;
         this.angulo = 0;
         this.velocidadX = 0;
         this.velocidadY = 0;
         this.cooldownDisparo = 0;
-        this.juego = juego;
+        this.radioColision = 18;
     }
 
     draw() {
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angulo);
+
+        if (this.juego.tiempoInvulnerable > 0) {
+            ctx.globalAlpha = 0.5;
+        }
+
         if (this.juego.keys["ArrowUp"]) {
             ctx.beginPath();
             ctx.moveTo(-8, 20);
@@ -154,13 +195,21 @@ class Nave {
         ctx.lineTo(15, 15);
         ctx.closePath();
         ctx.strokeStyle = COLORES.nave;
+        ctx.lineWidth = 2;
         ctx.stroke();
+
         ctx.restore();
     }
 
     update() {
-        if (this.juego.keys["ArrowLeft"]) this.angulo -= 0.2;
-        if (this.juego.keys["ArrowRight"]) this.angulo += 0.2;
+        if (this.juego.keys["ArrowLeft"]) {
+            this.angulo -= 0.2;
+        }
+
+        if (this.juego.keys["ArrowRight"]) {
+            this.angulo += 0.2;
+        }
+
         if (this.juego.keys["ArrowUp"]) {
             this.velocidadX += Math.cos(this.angulo - Math.PI / 2);
             this.velocidadY += Math.sin(this.angulo - Math.PI / 2);
@@ -168,94 +217,43 @@ class Nave {
 
         this.x += this.velocidadX;
         this.y += this.velocidadY;
-        // fricción
+
         this.velocidadX *= 0.8;
         this.velocidadY *= 0.8;
-        // límites del mapa
+
         if (this.x > canvas.width) this.x = 0;
         if (this.x < 0) this.x = canvas.width;
         if (this.y > canvas.height) this.y = 0;
         if (this.y < 0) this.y = canvas.height;
 
-        if (this.cooldownDisparo > 0) this.cooldownDisparo--;
-        // disparo
+        if (this.cooldownDisparo > 0) {
+            this.cooldownDisparo--;
+        }
+
         if (this.juego.keys[" "] && this.cooldownDisparo <= 0) {
-            let offsetX = Math.cos(this.angulo - Math.PI / 2) * 10;
-            let offsetY = Math.sin(this.angulo - Math.PI / 2) * 10;
+            const offsetX = Math.cos(this.angulo - Math.PI / 2) * 10;
+            const offsetY = Math.sin(this.angulo - Math.PI / 2) * 10;
+
             this.juego.balas.push(
                 new Bala(this.x + offsetX, this.y + offsetY, this.angulo)
             );
+
             this.cooldownDisparo = 10;
         }
     }
+
+    resetearPosicion() {
+        this.x = canvas.width / 2;
+        this.y = canvas.height / 2;
+        this.velocidadX = 0;
+        this.velocidadY = 0;
+        this.angulo = 0;
+    }
 }
 
-class Juego {
-    constructor() {
-        this.fondo = new Fondo();
-        this.balas = [];
-        this.asteroides = [];
-        this.keys = {};
-        // Detectar teclas presionadas
-        document.addEventListener("keydown", e => this.keys[e.key] = true);
-        document.addEventListener("keyup", e => this.keys[e.key] = false);
-        // Crear nave en el centro
-        this.nave = new Nave(canvas.width / 2, canvas.height / 2, this);
-        this.fondo.crear();
-        this.crearAsteroidesIniciales();
-    }
-
-    crearAsteroidesIniciales() {
-        for (let i = 0; i < 5; i++) {
-            this.asteroides.push(new Asteroide());
-        }
-    }
-
-    detectarColisiones() {
-        for (let i = this.balas.length - 1; i >= 0; i--) {
-            for (let j = this.asteroides.length - 1; j >= 0; j--) {
-                let bala = this.balas[i];
-                let ast = this.asteroides[j];
-                let dx = bala.x - ast.x;
-                let dy = bala.y - ast.y;
-                let distancia = Math.sqrt(dx * dx + dy * dy);
-                // Si colisiona, se elimina y aparece otro
-                if (distancia < 30) {
-                    this.balas.splice(i, 1);
-                    this.asteroides.splice(j, 1);
-                    this.asteroides.push(new Asteroide());
-                    break;
-                }
-            }
-        }
-    }
-
-    colisionNaveAsteroide() {
-        for (let ast of this.asteroides) {
-            let dx = this.nave.x - ast.x;
-            let dy = this.nave.y - ast.y;
-            let distancia = Math.sqrt(dx * dx + dy * dy);
-            if (distancia < 25) {
-                alert("GAME OVER");
-                this.reiniciarJuego();
-                break;
-            }
-        }
-    }
-
-    reiniciarJuego() {
-        this.nave.x = canvas.width / 2;
-        this.nave.y = canvas.height / 2;
-        this.nave.velocidadX = 0;
-        this.nave.velocidadY = 0;
-        this.nave.angulo = 0;
-        this.balas = [];
-        this.asteroides = [];
-        this.crearAsteroidesIniciales();
-        // limpiar teclas correctamente
-        for (let key in this.keys) {
-            this.keys[key] = false;
-        }
+class HUD {
+    constructor(juego) {
+        this.juego = juego;
     }
 
     dibujarMarco() {
@@ -264,25 +262,270 @@ class Juego {
         ctx.strokeRect(0, 0, canvas.width, canvas.height);
     }
 
-    loop() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        this.nave.update();
-        this.asteroides.forEach(a => a.update());
-        this.detectarColisiones();
-        this.colisionNaveAsteroide();
-        this.fondo.dibujar();
-        this.asteroides.forEach(a => a.draw());
-        this.dibujarMarco();
-        this.balas.forEach(bala => {
-            bala.update();
-            bala.draw();
+    dibujarHUD() {
+        ctx.save();
+        ctx.font = '16px "Press Start 2P", monospace';
+        ctx.fillStyle = COLORES.textoHUD;
+        ctx.textAlign = "left";
+        ctx.fillText("PUNTAJE: " + this.juego.puntaje, 20, 30);
+        ctx.fillText("VIDAS: " + this.juego.vidas, 20, 55);
+        ctx.fillText("RECORD: " + this.juego.mejorPuntaje, 20, 80);
+        ctx.restore();
+    }
+
+    dibujarPantallaInicio() {
+        ctx.save();
+        ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "center";
+        ctx.font = '24px "Press Start 2P", monospace';
+        ctx.fillText("ASTEROIDES 2D", canvas.width / 2, canvas.height / 2 - 30);
+
+        ctx.font = '12px "Press Start 2P", monospace';
+        ctx.fillText("PRESIONA INICIAR", canvas.width / 2, canvas.height / 2 + 20);
+        ctx.restore();
+    }
+
+    dibujarPantallaPausa() {
+        ctx.save();
+        ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = COLORES.pausaTexto;
+        ctx.textAlign = "center";
+        ctx.font = '22px "Press Start 2P", monospace';
+        ctx.fillText("PAUSA", canvas.width / 2, canvas.height / 2);
+        ctx.restore();
+    }
+
+    dibujarPantallaFin() {
+        ctx.save();
+        ctx.fillStyle = COLORES.gameOverFondo;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = COLORES.gameOverTexto;
+        ctx.textAlign = "center";
+        ctx.font = '26px "Press Start 2P", monospace';
+        ctx.fillText("FIN DEL JUEGO", canvas.width / 2, canvas.height / 2 - 10);
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = '12px "Press Start 2P", monospace';
+        ctx.fillText("PRESIONA REINICIAR", canvas.width / 2, canvas.height / 2 + 35);
+        ctx.restore();
+    }
+}
+
+class Juego {
+    constructor() {
+        this.keys = {};
+        this.balas = [];
+        this.asteroides = [];
+
+        this.puntaje = 0;
+        this.vidas = 3;
+        this.juegoIniciado = false;
+        this.juegoPausado = false;
+        this.finDelJuego = false;
+        this.puedeRecibirDanio = true;
+        this.tiempoInvulnerable = 0;
+        this.mejorPuntaje = Number(localStorage.getItem("mejorPuntaje")) || 0;
+
+        this.fondo = new Fondo();
+        this.hud = new HUD(this);
+        this.nave = new Nave(canvas.width / 2, canvas.height / 2, this);
+
+        this.btnIniciar = document.getElementById("btnIniciar");
+        this.btnPausar = document.getElementById("btnPausar");
+        this.btnReiniciar = document.getElementById("btnReiniciar");
+
+        this.configurarEventos();
+        this.fondo.crear();
+        this.crearAsteroidesIniciales();
+    }
+
+    configurarEventos() {
+        document.addEventListener("keydown", e => {
+            this.keys[e.key] = true;
         });
 
+        document.addEventListener("keyup", e => {
+            this.keys[e.key] = false;
+        });
+
+        if (this.btnIniciar) {
+            this.btnIniciar.addEventListener("click", () => {
+                if (!this.juegoIniciado) {
+                    this.juegoIniciado = true;
+                    this.juegoPausado = false;
+                    this.finDelJuego = false;
+                }
+            });
+        }
+
+        if (this.btnPausar) {
+            this.btnPausar.addEventListener("click", () => {
+                if (!this.juegoIniciado || this.finDelJuego) return;
+                this.juegoPausado = !this.juegoPausado;
+            });
+        }
+
+        if (this.btnReiniciar) {
+            this.btnReiniciar.addEventListener("click", () => {
+                this.reiniciarJuego();
+            });
+        }
+    }
+
+    guardarMejorPuntaje() {
+        if (this.puntaje > this.mejorPuntaje) {
+            this.mejorPuntaje = this.puntaje;
+            localStorage.setItem("mejorPuntaje", this.mejorPuntaje);
+        }
+    }
+
+    crearAsteroidesIniciales(cantidad = 5) {
+        this.asteroides = [];
+        for (let i = 0; i < cantidad; i++) {
+            this.asteroides.push(new Asteroide());
+        }
+    }
+
+    detectarColisionesBalasAsteroides() {
+        for (let i = this.balas.length - 1; i >= 0; i--) {
+            const bala = this.balas[i];
+
+            for (let j = this.asteroides.length - 1; j >= 0; j--) {
+                const asteroide = this.asteroides[j];
+
+                if (!bala.activa || !asteroide.activo) continue;
+
+                const dx = bala.x - asteroide.x;
+                const dy = bala.y - asteroide.y;
+                const distancia = Math.sqrt(dx * dx + dy * dy);
+
+                if (distancia < asteroide.radioColision) {
+                    bala.activa = false;
+                    asteroide.activo = false;
+                    this.puntaje += 10;
+                    this.guardarMejorPuntaje();
+                    break;
+                }
+            }
+        }
+
+        this.balas = this.balas.filter(bala => bala.activa);
+        this.asteroides = this.asteroides.filter(asteroide => asteroide.activo);
+
+        if (this.asteroides.length === 0 && !this.finDelJuego) {
+            this.crearAsteroidesIniciales(5);
+        }
+    }
+
+    detectarColisionNaveAsteroides() {
+        if (!this.puedeRecibirDanio || this.finDelJuego) return;
+
+        for (let i = 0; i < this.asteroides.length; i++) {
+            const asteroide = this.asteroides[i];
+            if (!asteroide.activo) continue;
+
+            const dx = this.nave.x - asteroide.x;
+            const dy = this.nave.y - asteroide.y;
+            const distancia = Math.sqrt(dx * dx + dy * dy);
+
+            if (distancia < this.nave.radioColision + asteroide.radioColision * 0.6) {
+                this.vidas--;
+                asteroide.activo = false;
+
+                if (this.vidas <= 0) {
+                    this.vidas = 0;
+                    this.finDelJuego = true;
+                    this.juegoIniciado = false;
+                    this.guardarMejorPuntaje();
+                } else {
+                    this.nave.resetearPosicion();
+                    this.puedeRecibirDanio = false;
+                    this.tiempoInvulnerable = 120;
+                }
+
+                break;
+            }
+        }
+
+        this.asteroides = this.asteroides.filter(asteroide => asteroide.activo);
+
+        if (this.asteroides.length === 0 && !this.finDelJuego) {
+            this.crearAsteroidesIniciales(5);
+        }
+    }
+
+    reiniciarJuego() {
+        this.puntaje = 0;
+        this.vidas = 3;
+        this.juegoIniciado = false;
+        this.juegoPausado = false;
+        this.finDelJuego = false;
+        this.puedeRecibirDanio = true;
+        this.tiempoInvulnerable = 0;
+
+        this.balas = [];
+        this.nave = new Nave(canvas.width / 2, canvas.height / 2, this);
+
+        this.fondo.crear();
+        this.crearAsteroidesIniciales();
+
+        for (let key in this.keys) {
+            this.keys[key] = false;
+        }
+    }
+
+    actualizar() {
+        if (this.tiempoInvulnerable > 0) {
+            this.tiempoInvulnerable--;
+        } else {
+            this.puedeRecibirDanio = true;
+        }
+
+        this.nave.update();
+
+        this.balas.forEach(bala => bala.update());
+        this.asteroides.forEach(asteroide => asteroide.update());
+
+        this.detectarColisionesBalasAsteroides();
+        this.detectarColisionNaveAsteroides();
+    }
+
+    dibujar() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        this.fondo.dibujar();
+        this.hud.dibujarMarco();
+        this.hud.dibujarHUD();
+
+        this.asteroides.forEach(asteroide => asteroide.draw());
+        this.balas.forEach(bala => bala.draw());
         this.nave.draw();
+
+        if (this.finDelJuego) {
+            this.hud.dibujarPantallaFin();
+        } else if (!this.juegoIniciado) {
+            this.hud.dibujarPantallaInicio();
+        } else if (this.juegoPausado) {
+            this.hud.dibujarPantallaPausa();
+        }
+    }
+
+    loop() {
+        this.dibujar();
+
+        if (!this.finDelJuego && this.juegoIniciado && !this.juegoPausado) {
+            this.actualizar();
+        }
+
         requestAnimationFrame(() => this.loop());
     }
 }
 
-// iniciar juego
-let juego = new Juego();
+const juego = new Juego();
 juego.loop();
